@@ -1,7 +1,7 @@
 SFML-Pi
 =======
 
-SFML on the Raspberry Pi with hardware graphics and no X11 dependency.
+SFML on the odroid go advance with hardware graphics and no X11 dependency.
 
 Install
 -------
@@ -24,15 +24,10 @@ Install
 ```bash
 mkdir build
 cd build
-cmake .. -DSFML_RPI=1 -DEGL_INCLUDE_DIR=/opt/vc/include -DEGL_LIBRARY=/opt/vc/lib/libbrcmEGL.so -DGLES_INCLUDE_DIR=/opt/vc/include -DGLES_LIBRARY=/opt/vc/lib/libbrcmGLESv2.so
+cmake .. -DSFML_RPI=1 -DSFML_OS_LINUX=1 -DSFML_OPENGL_ES=1 -DEGL_INCLUDE_DIR=/usr/include  -DEGL_LIBRARY=/usr/local/lib/aarch64-linux-gnu/libEGL.so -DGLES_INCLUDE_DIR=/usr/include  -DGLES_LIBRARY=/usr/local/lib/aarch64-linux-gnu/libGLESv2.so
 sudo make install
 sudo ldconfig
 ```
-
-Note: if you are using a Pi firmware older than 1.20160921-1, please replace "libbrcmEGL.so" and "libbrcmGLESv2" with the old names, "libEGL.so" and "libGLESv2".
-
-That's it!  You should now be able to use SFML on your raspberry pi with hardware accelerated
-graphics and no need to be running X.
 
 More Info
 ---------
