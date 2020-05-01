@@ -28,8 +28,9 @@
 // Headers
 ////////////////////////////////////////////////////////////
 #include <SFML/Window/VideoModeImpl.hpp>
+#if 0 // by trngaje
 #include <bcm_host.h>
-
+#endif
 namespace sf
 {
 namespace priv
@@ -50,13 +51,20 @@ VideoMode VideoModeImpl::getDesktopMode()
 
     if (!initialized)
     {
+#if 0 // by trngaje
         bcm_host_init();
+#endif
         initialized=true;
     }
 
+#if 0 // by trngaje
     uint32_t width( 0 ), height( 0 );
     graphics_get_display_size( 0 /* LCD */, &width, &height );
     return VideoMode(width, height);
+#endif
+
+    return VideoMode(480, 320);
+	
 }
 
 } // namespace priv

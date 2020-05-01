@@ -231,14 +231,14 @@ void GlContext::initResource()
         extensions.clear();
 
         // Check whether a >= 3.0 context is available
-#ifndef SFML_RPI
+//#ifndef SFML_RPI
         int majorVersion = 0;
         glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
 
         if (glGetError() == GL_INVALID_ENUM)
-#else
-        if (1)
-#endif
+//#else
+//        if (1)
+//#endif
         {
             // Try to load the < 3.0 way
             const char* extensionString = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
@@ -574,7 +574,7 @@ void GlContext::initialize(const ContextSettings& requestedSettings)
     int majorVersion = 0;
     int minorVersion = 0;
 
-#ifndef SFML_RPI
+//#ifndef SFML_RPI
     // Try the new way first
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
@@ -585,7 +585,7 @@ void GlContext::initialize(const ContextSettings& requestedSettings)
         m_settings.minorVersion = static_cast<unsigned int>(minorVersion);
     }
     else
-#endif
+//#endif
     {
         // Try the old way
         const GLubyte* version = glGetString(GL_VERSION);

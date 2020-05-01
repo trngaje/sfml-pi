@@ -34,7 +34,15 @@
 #include <SFML/Window/WindowImpl.hpp>
 #include <SFML/Window/EglContext.hpp>
 
+#if 0 // by trngaje
 #include <bcm_host.h>
+#endif
+
+typedef struct {
+   int element;
+   int width;   /* This is necessary because dispmanx elements are not queriable. */
+   int height;
+} EGL_DISPMANX_WINDOW_T;
 
 namespace sf
 {
@@ -181,8 +189,9 @@ protected:
     virtual void processEvents();
 
 private:
-
-    DISPMANX_DISPLAY_HANDLE_T m_display;
+ // by trngaje
+    //DISPMANX_DISPLAY_HANDLE_T m_display;
+	
     EGL_DISPMANX_WINDOW_T m_nativeWindow;
 };
 

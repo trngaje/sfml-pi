@@ -45,7 +45,7 @@ namespace priv
 ////////////////////////////////////////////////////////////
 WindowImplRPi::WindowImplRPi(WindowHandle handle)
 {
-    m_display = 0;
+//    m_display = 0;
     m_nativeWindow.element = 0;
     m_nativeWindow.width = 0;
     m_nativeWindow.height = 0;
@@ -55,6 +55,8 @@ WindowImplRPi::WindowImplRPi(WindowHandle handle)
 ////////////////////////////////////////////////////////////
 WindowImplRPi::WindowImplRPi(VideoMode mode, const String& title, unsigned long style, const ContextSettings& settings)
 {
+
+#if 0 // by trngaje
     DISPMANX_ELEMENT_HANDLE_T dispman_element;
     DISPMANX_UPDATE_HANDLE_T dispman_update;
     VC_RECT_T dst_rect;
@@ -95,12 +97,19 @@ WindowImplRPi::WindowImplRPi(VideoMode mode, const String& title, unsigned long 
     m_nativeWindow.width = mode.width;
     m_nativeWindow.height = mode.height;
     vc_dispmanx_update_submit_sync( dispman_update );
+#endif 
+
+
+    m_nativeWindow.element = 1; //surface; //0; //dispman_element;
+    m_nativeWindow.width = mode.width;
+    m_nativeWindow.height = mode.height;	
 }
 
 
 ////////////////////////////////////////////////////////////
 WindowImplRPi::~WindowImplRPi()
 {
+#if 0
     if ( m_nativeWindow.element )
     {
         DISPMANX_UPDATE_HANDLE_T dispman_update;
@@ -111,6 +120,7 @@ WindowImplRPi::~WindowImplRPi()
 
     if ( m_display )
         vc_dispmanx_display_close( m_display );
+#endif
 }
 
 

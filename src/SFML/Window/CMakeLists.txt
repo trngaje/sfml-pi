@@ -263,6 +263,8 @@ else()
     list(APPEND WINDOW_EXT_LIBS ${OPENGL_gl_LIBRARY})
 endif()
 
+include_directories("/usr/include")
+
 # define the sfml-window target
 sfml_add_library(sfml-window
                  SOURCES ${SRC} ${PLATFORM_SRC}

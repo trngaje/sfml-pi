@@ -40,6 +40,57 @@
     #include <X11/Xlib.h>
 #endif
 
+#define EGL_EGLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
+#include <go2/display.h>
+#include <drm/drm_fourcc.h>
+//#include <cstring>
+#include <gbm.h>
+
+#define BUFFER_MAX (3)
+
+
+
+
+
+
+
+typedef struct buffer_surface_pair
+{
+    struct gbm_bo* gbmBuffer;
+    go2_surface_t* surface;
+} buffer_surface_pair_t;
+
+typedef struct go2_context
+{
+    go2_display_t* display;    
+    int width;
+    int height;
+    go2_context_attributes_t attributes;
+    struct gbm_device* gbmDevice;
+    EGLDisplay eglDisplay;
+    struct gbm_surface* gbmSurface;
+    EGLSurface eglSurface;
+    EGLContext eglContext;
+    uint32_t drmFourCC;
+    buffer_surface_pair_t bufferMap[BUFFER_MAX];
+    int bufferCount;
+} go2_context_t;
+
+
+go2_display_t* go2_display = NULL;
+go2_presenter_t* go2_presenter = NULL;
+go2_surface_t* go2_surface = NULL;
+go2_context_t* go2_context3D = NULL;
+GLuint fbo;
+
+
+
 namespace
 {
     EGLDisplay getInitializedDisplay()
@@ -81,11 +132,11 @@ m_surface (EGL_NO_SURFACE),
 m_config  (NULL)
 {
     // Get the initialized EGL display
-    m_display = getInitializedDisplay();
+    //m_display = getInitializedDisplay();
 
     // Get the best EGL config matching the default video settings
-    m_config = getBestConfig(m_display, VideoMode::getDesktopMode().bitsPerPixel, ContextSettings());
-    updateSettings();
+    //m_config = getBestConfig(m_display, VideoMode::getDesktopMode().bitsPerPixel, ContextSettings());
+    //updateSettings();
 
     // Note: The EGL specs say that attrib_list can be NULL when passed to eglCreatePbufferSurface,
     // but this is resulting in a segfault. Bug in Android?
@@ -95,10 +146,10 @@ m_config  (NULL)
         EGL_NONE
     };
 
-    m_surface = eglCheck(eglCreatePbufferSurface(m_display, m_config, attrib_list));
+    //m_surface = eglCheck(eglCreatePbufferSurface(m_display, m_config, attrib_list));
 
     // Create EGL context
-    createContext(shared);
+    //createContext(shared);
 }
 
 
@@ -120,8 +171,9 @@ m_config  (NULL)
 #endif
 
     // Get the initialized EGL display
-    m_display = getInitializedDisplay();
+    //m_display = getInitializedDisplay();
 
+	createSurface((EGLNativeWindowType)owner->getSystemHandle());
     // Get the best EGL config matching the requested video settings
     m_config = getBestConfig(m_display, bitsPerPixel, settings);
     updateSettings();
@@ -132,7 +184,7 @@ m_config  (NULL)
 #if !defined(SFML_SYSTEM_ANDROID)
     // Create EGL surface (except on Android because the window is created
     // asynchronously, its activity manager will call it for us)
-    createSurface((EGLNativeWindowType)owner->getSystemHandle());
+    //createSurface((EGLNativeWindowType)owner->getSystemHandle());
 #endif
 }
 
@@ -150,6 +202,7 @@ m_config  (NULL)
 ////////////////////////////////////////////////////////////
 EglContext::~EglContext()
 {
+	printf("[trngaje] EglContext::~EglContext()\n");
     // Deactivate the current context
     EGLContext currentContext = eglCheck(eglGetCurrentContext());
 
@@ -169,6 +222,30 @@ EglContext::~EglContext()
     {
         eglCheck(eglDestroySurface(m_display, m_surface));
     }
+    
+	if (go2_surface != NULL)
+	{
+		go2_surface_destroy(go2_surface);
+		go2_surface = NULL;
+	}
+	
+	if (go2_context3D != NULL)
+	{
+		go2_context_destroy(go2_context3D);
+		go2_context3D = NULL;
+	}
+	
+	if (go2_presenter != NULL)
+	{
+		go2_presenter_destroy(go2_presenter);
+		go2_presenter = NULL;
+	}
+	
+	if (go2_display != NULL)
+	{
+		go2_display_destroy(go2_display);
+		go2_display = NULL;
+	}
 }
 
 
@@ -186,7 +263,22 @@ bool EglContext::makeCurrent(bool current)
 void EglContext::display()
 {
     if (m_surface != EGL_NO_SURFACE)
-        eglCheck(eglSwapBuffers(m_display, m_surface));
+	{
+        //eglCheck(eglSwapBuffers(m_display, m_surface));
+		
+        go2_context_swap_buffers(go2_context3D);
+
+        go2_surface_t* gles_surface = go2_context_surface_lock(go2_context3D);
+        go2_presenter_post(go2_presenter,
+                    gles_surface,
+                    0, 0, 480, 320,
+                    0, 0, 320, 480,
+                    GO2_ROTATION_DEGREES_270);
+		go2_context_surface_unlock(go2_context3D, gles_surface);		
+	}
+	else{
+		printf("[trngaje] EglContext.cpp:display, m_surface==EGL_NO_SURFACE");
+	}
 }
 
 
@@ -223,7 +315,87 @@ void EglContext::createContext(EglContext* shared)
 ////////////////////////////////////////////////////////////
 void EglContext::createSurface(EGLNativeWindowType window)
 {
-    m_surface = eglCheck(eglCreateWindowSurface(m_display, m_config, window, NULL));
+    //m_surface = eglCheck(eglCreateWindowSurface(m_display, m_config, window, NULL));
+	go2_display = go2_display_create();
+    go2_presenter = go2_presenter_create(go2_display, DRM_FORMAT_RGB565, 0xff080808);
+
+	go2_context_attributes_t attr;
+	attr.major = 3;
+	attr.minor = 2;
+	attr.red_bits = 5;
+	attr.green_bits = 6;
+	attr.blue_bits = 5;
+	attr.alpha_bits = 0;
+	attr.depth_bits = 24;
+	attr.stencil_bits = 8;
+
+	go2_context3D = go2_context_create(go2_display, 480, 320, &attr);
+	go2_context_make_current(go2_context3D);	
+	go2_surface = go2_surface_create(go2_display, 480, 320, DRM_FORMAT_RGB565);
+	if (!go2_surface)
+	{
+		printf("go2_surface_create failed.\n");
+		throw std::exception();
+	}
+
+	int drmfd = go2_surface_prime_fd(go2_surface);
+	printf("drmfd=%d\n", drmfd);
+
+        EGLint img_attrs[] = {
+            EGL_WIDTH, 480,
+            EGL_HEIGHT, 320,
+            EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_RGB565,
+            EGL_DMA_BUF_PLANE0_FD_EXT, drmfd,
+            EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+            EGL_DMA_BUF_PLANE0_PITCH_EXT, go2_surface_stride_get(go2_surface),
+            EGL_NONE
+        };
+		
+	PFNEGLCREATEIMAGEKHRPROC p_eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC)eglGetProcAddress("eglCreateImageKHR");
+        if (!p_eglCreateImageKHR) abort();	
+		
+	EGLImageKHR image = p_eglCreateImageKHR((EGLDisplay)go2_context_egldisplay_get(go2_context3D), EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+        fprintf(stderr, "EGLImageKHR = %p\n", image);
+	
+	
+	GLuint texture2D;
+	glGenTextures(1, &texture2D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture2D);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	PFNGLEGLIMAGETARGETTEXTURE2DOESPROC p_glEGLImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+	if (!p_glEGLImageTargetTexture2DOES) abort();
+
+	p_glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);   
+
+
+	GLuint depthBuffer;
+	glGenRenderbuffers(1, &depthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, 480, 320);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,	texture2D, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+	GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+	{
+		printf("FBO: Not Complete.\n");
+		throw std::exception();
+	}	
+	
+	m_surface = go2_context3D->eglSurface;
+	m_display = go2_context3D->eglDisplay;
+	m_context = go2_context3D->eglContext;
+	
+	
+	printf("[trngaje] EglContext.cpp:createSurface m_surface=0x%x\n", m_surface);
 }
 
 
