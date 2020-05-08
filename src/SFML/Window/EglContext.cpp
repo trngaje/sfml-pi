@@ -203,7 +203,8 @@ m_config  (NULL)
 ////////////////////////////////////////////////////////////
 EglContext::~EglContext()
 {
-	printf("[trngaje] EglContext::~EglContext()\n");
+	//printf("[trngaje] EglContext::~EglContext()\n");
+
     // Deactivate the current context
     EGLContext currentContext = eglCheck(eglGetCurrentContext());
 
@@ -224,42 +225,36 @@ EglContext::~EglContext()
         eglCheck(eglDestroySurface(m_display, m_surface));
     }
 
-
-	
-	if (go2_context3D != NULL)
-	{
-		go2_context_destroy(go2_context3D);
-		go2_context3D = NULL;
-	}
-	
-#if 0
-	m_surface = EGL_NO_SURFACE;
 	m_context = EGL_NO_CONTEXT;
-	
-	if (go2_surface != NULL)
-	{
-		go2_surface_destroy(go2_surface);
-		go2_surface = NULL;
-	}
-	
+	m_surface = EGL_NO_SURFACE;
+
+#if 1
+//	if (go2_surface != NULL)
+//	{
+//		go2_surface_destroy(go2_surface);
+//		go2_surface = NULL;
+//	}
+
 	if (go2_context3D != NULL)
 	{
 		go2_context_destroy(go2_context3D);
 		go2_context3D = NULL;
 	}
-	
+		
 	if (go2_presenter != NULL)
 	{
 		go2_presenter_destroy(go2_presenter);
 		go2_presenter = NULL;
 	}
-	
+
+
 	if (go2_display != NULL)
 	{
 		go2_display_destroy(go2_display);
 		go2_display = NULL;
 	}
-		
+
+
 	#endif
 }
 
@@ -290,10 +285,13 @@ void EglContext::display()
                     0, 0, 320, 480,
                     GO2_ROTATION_DEGREES_270);
 		go2_context_surface_unlock(go2_context3D, gles_surface);		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	}
+/*
 	else{
 		printf("[trngaje] EglContext.cpp:display, m_surface==EGL_NO_SURFACE");
 	}
+*/
 }
 
 
@@ -340,14 +338,14 @@ void EglContext::createSurface(EGLNativeWindowType window)
 
 
 	go2_context_attributes_t attr;
-	attr.major = 3;
-	attr.minor = 2;
-	attr.red_bits = 5;
-	attr.green_bits = 6;
-	attr.blue_bits = 5;
-	attr.alpha_bits = 0;
+	attr.major = 1;
+	attr.minor = 0;
+	attr.red_bits = 8;
+	attr.green_bits = 8;
+	attr.blue_bits = 8;
+	attr.alpha_bits = 8;
 	attr.depth_bits = 24;
-	attr.stencil_bits = 8;
+	attr.stencil_bits = 0;
 
 	go2_context3D = go2_context_create(go2_display, 480, 320, &attr);
 
@@ -356,9 +354,6 @@ void EglContext::createSurface(EGLNativeWindowType window)
 	
 	if (m_context == NULL)
 		m_context = go2_context3D->eglContext;
-
-	
-	printf("[trngaje] EglContext.cpp:createSurface m_surface=0x%x\n", m_surface);
 }
 
 
@@ -382,7 +377,7 @@ EGLConfig EglContext::getBestConfig(EGLDisplay display, unsigned int bitsPerPixe
         EGL_DEPTH_SIZE, settings.depthBits,
         EGL_STENCIL_SIZE, settings.stencilBits,
         EGL_SAMPLE_BUFFERS, settings.antialiasingLevel,
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT | EGL_PBUFFER_BIT,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT /*| EGL_PBUFFER_BIT*/, // by trngaje
         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
         EGL_NONE
     };
