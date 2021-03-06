@@ -272,6 +272,10 @@ bool EglContext::makeCurrent(bool current)
 ////////////////////////////////////////////////////////////
 void EglContext::display()
 {
+    int w, h;
+    w = go2_display_height_get(go2_display);
+    h = go2_display_width_get(go2_display);
+
     if (m_surface != EGL_NO_SURFACE)
 	{
         eglCheck(eglSwapBuffers(m_display, m_surface));
@@ -281,8 +285,8 @@ void EglContext::display()
         go2_surface_t* gles_surface = go2_context_surface_lock(go2_context3D);
         go2_presenter_post(go2_presenter,
                     gles_surface,
-                    0, 0, 480, 320,
-                    0, 0, 320, 480,
+                    0, 0, w, h, //480, 320,
+                    0, 0, h, w, //320, 480,
                     GO2_ROTATION_DEGREES_270);
 		go2_context_surface_unlock(go2_context3D, gles_surface);		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
@@ -347,7 +351,11 @@ void EglContext::createSurface(EGLNativeWindowType window)
 	attr.depth_bits = 24;
 	attr.stencil_bits = 0;
 
-	go2_context3D = go2_context_create(go2_display, 480, 320, &attr);
+	int w, h;
+	w = go2_display_height_get(go2_display);
+	h = go2_display_width_get(go2_display);
+
+	go2_context3D = go2_context_create(go2_display, w, h/*480, 320*/, &attr);
 
 	m_surface = go2_context3D->eglSurface;
 	m_display = go2_context3D->eglDisplay;

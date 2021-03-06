@@ -63,7 +63,9 @@ VideoMode VideoModeImpl::getDesktopMode()
     return VideoMode(width, height);
 #endif
 
-    return VideoMode(480, 320);
+    //return VideoMode(480, 320);
+
+    return VideoMode(854, 480);
 	
 }
 
