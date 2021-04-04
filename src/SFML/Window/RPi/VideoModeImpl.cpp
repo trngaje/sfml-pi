@@ -31,6 +31,10 @@
 #if 0 // by trngaje
 #include <bcm_host.h>
 #endif
+
+#include <go2/display.h>
+extern go2_display_t* go2_display;
+
 namespace sf
 {
 namespace priv
@@ -63,10 +67,13 @@ VideoMode VideoModeImpl::getDesktopMode()
     return VideoMode(width, height);
 #endif
 
-    //return VideoMode(480, 320);
+    int w, h;
+	if (go2_display == NULL)
+		go2_display = go2_display_create();
 
-    return VideoMode(854, 480);
-	
+    w = go2_display_height_get(go2_display);
+    h = go2_display_width_get(go2_display);
+	return VideoMode(w, h);
 }
 
 } // namespace priv
